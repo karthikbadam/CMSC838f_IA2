@@ -41,8 +41,11 @@
  if (inString != null) {
  // trim off any whitespace:
  inString = trim(inString);
+ String[] list = split(inString, ',');
+ 
+ 
  // convert to an int and map to the screen height:
- float inByte = float(inString); 
+ float inByte = float(list[2]); 
  inByte = map(inByte, 0, 1023, 0, height);
  
  // draw the line:
