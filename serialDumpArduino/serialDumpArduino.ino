@@ -18,9 +18,9 @@ void loop() {
   
   ledVal = map(analogVal, 0, 1023, 0, 255); 
   
-  //analogWrite(LED_PIN, 255); 
+  analogWrite(LED_PIN, HIGH); 
   
-  Serial.println("Photoresistor,A,"+String(analogVal)); 
+  Serial.println("A," + "1," + String(analogVal)); 
   
    delay(blinkDelayMs);
 }
