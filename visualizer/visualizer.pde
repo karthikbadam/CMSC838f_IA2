@@ -16,8 +16,8 @@
  int chartWidth = 1000; 
  int chartHeight = 50; 
  
- String[] sensorNames = {"Potentiometer", "Photoresistor", "Hall Sensor", "Tactile Button", "Switch"}; 
- int[] sensorRanges = {1023, 1023, 1023, 1, 1};
+ String[] sensorNames = {"Potentiometer", "Photoresistor", "Microphone", "Tactile Button", "Switch"}; 
+ int[] sensorRanges = {1023, 200, 50, 1, 1};
  
  float[] prevX = new float[TOTAL_CHARTS]; 
  float[] prevY = new float[TOTAL_CHARTS]; 
@@ -25,6 +25,7 @@
  
  float[] y1Ranges = new float[TOTAL_CHARTS];
  float[] y2Ranges = new float[TOTAL_CHARTS];
+ 
  
  void setup () {
    
@@ -66,62 +67,71 @@
    // everything happens in the serialEvent()
  }
  
+ void myLoop(String type, int index, float inByte) {
+     
+   float rawValue = inByte;
+   if (type.equals("D"))
+     inByte = getDigitalNormalizedValue(index, inByte);
+   else 
+     inByte = getAnalogNormalizedValue(index, inByte);
+   
+   // draw the line:
+   stroke(STROKE_COLOR);
+   strokeWeight(2);
+   line(prevX[index], prevY[index], xPos, inByte);
+   prevX[index] = xPos; 
+   prevY[index] = inByte; 
+   
+   if (sensorRanges[index] != 1 && abs(rawValue - prevRaw[index]) > sensorRanges[index]/5) {
+     PFont font = loadFont("Garamond-32.vlw");
+     textFont(font, 11);
+     text(int(rawValue), xPos, inByte - 5);
+   }
+   
+   prevRaw[index] = rawValue;
+   
+   
+   // at the edge of the screen, go back to the beginning:
+   if (xPos >= width - PADDING) {
+     xPos = PADDING;
+      background(BACKGROUND_COLOR); 
+     drawRect (PADDING_SMALL, width - PADDING_SMALL, PADDING_SMALL, height - PADDING_SMALL);
+     drawXAxis (PADDING, width - PADDING, height - PADDING);
+     chartHeight = (height - 2 * PADDING) / TOTAL_CHARTS;
+     chartWidth = width - 2*PADDING;
+     
+     //data all axis
+     for (int i = 0; i < TOTAL_CHARTS; i++) {
+       prevX[i] = PADDING; 
+            
+       float x = PADDING; 
+       float y1 = 1.5*PADDING + i*chartHeight; 
+       float y2 = y1 + chartHeight - PADDING;
+   
+       drawYAxis (x, y1, y2, i, sensorNames[i]);  
+     }
+   } else {
+     
+     xPos = xPos + 2;
+   }
+   
+ }
+ 
+ 
  void serialEvent (Serial myPort) {
    String inString = myPort.readStringUntil('\n');
- 
+    
    if (inString != null) {
      inString = trim(inString);
      String[] list = split(inString, ',');
- 
-     // convert to an int and map to the screen height:
-     int index = int(list[1]);
-     float inByte = float(list[2]);
-     float rawValue = inByte;
-     if (list[0].equals("D"))
-       inByte = getDigitalNormalizedValue(index, inByte);
-     else 
-       inByte = getAnalogNormalizedValue(index, inByte);
      
-     //inByte = map(inByte, PADDING, 1023, 0, height/2 - PADDING);
- 
-     // draw the line:
-     stroke(STROKE_COLOR);
-     strokeWeight(2);
-     line(prevX[index], prevY[index], xPos, inByte);
-     prevX[index] = xPos; 
-     prevY[index] = inByte; 
-     
-     if (abs(rawValue - prevRaw[index]) > 200) {
-       PFont font = loadFont("Garamond-32.vlw");
-       textFont(font, 11);
-       text(int(rawValue), xPos, inByte - 5);
-     }
-     
-     prevRaw[index] = rawValue;
-     
-     
-     // at the edge of the screen, go back to the beginning:
-     if (xPos >= width - PADDING) {
-       xPos = PADDING;
-        background(BACKGROUND_COLOR); 
-       drawRect (PADDING_SMALL, width - PADDING_SMALL, PADDING_SMALL, height - PADDING_SMALL);
-       drawXAxis (PADDING, width - PADDING, height - PADDING);
-       chartHeight = (height - 2 * PADDING) / TOTAL_CHARTS;
-       chartWidth = width - 2*PADDING;
-       
-       //data all axis
-       for (int i = 0; i < TOTAL_CHARTS; i++) {
-         prevX[i] = PADDING; 
-              
-         float x = PADDING; 
-         float y1 = 1.5*PADDING + i*chartHeight; 
-         float y2 = y1 + chartHeight - PADDING;
-     
-         drawYAxis (x, y1, y2, i, sensorNames[i]);  
-       }
-     } else {
-       
-       xPos = xPos + 2;
+     int counter = 0; 
+     for (int i = 0; i < TOTAL_CHARTS; i++) {
+         String type = list[counter];
+         int index = int(list[counter+1]);
+         float inByte = float(list[counter+2]); 
+         counter = counter + 3; 
+         myLoop(type, index, inByte);
      }
    }
  }
@@ -164,8 +174,8 @@
     PFont font = loadFont("Garamond-32.vlw");
     textFont(font, 15);
     
-    if (i < 3 )
-      text (sensorRanges[i], x - 6 * PADDING_SMALL, y1 + PADDING_SMALL);
+    if (i < 3)
+      text (sensorRanges[i], x - 4 * PADDING_SMALL, y1 + PADDING_SMALL);
     else 
       text (sensorRanges[i], x - 2 * PADDING_SMALL, y1 + PADDING_SMALL);
       
@@ -178,7 +188,7 @@
     float y1 = y1Ranges[index];
     float y2 = y2Ranges[index];
     
-    return map(1023-inByte, 0, 1023, y1, y2);  
+    return map(float(sensorRanges[index])-inByte, 0, sensorRanges[index], y1, y2);  
   }
   
   float getDigitalNormalizedValue (int index, float inByte) {
