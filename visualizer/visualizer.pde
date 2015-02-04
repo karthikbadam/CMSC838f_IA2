@@ -2,16 +2,13 @@
  // Adapted from Tom Igoe's sample code
  
  import processing.serial.*;
- import grafica.*; 
  
  Serial myPort;        // The serial port
  int STROKE_COLOR = #57385c; 
  int BACKGROUND_COLOR = #ffedbc;
  float minValue = 1023; 
- int PADDING = 30; 
+ int PADDING = 40; 
  int PADDING_SMALL = 5; 
- float prevX = PADDING; 
- float prevY = PADDING; 
  float xPos = PADDING;         // horizontal position of the graph
  
  //number of charts
@@ -19,7 +16,13 @@
  int chartWidth = 1000; 
  int chartHeight = 50; 
  
- String[] sensorNames = {"Potentiometer", "Photoresistor", "Hall Sensor", "Toggle Switch", "Push Back Switch"}; 
+ String[] sensorNames = {"Potentiometer", "Photoresistor", "Hall Sensor", "Tactile Button", "Switch"}; 
+ int[] sensorRanges = {1023, 1023, 1023, 1, 1};
+ 
+ float[] prevX = new float[TOTAL_CHARTS]; 
+ float[] prevY = new float[TOTAL_CHARTS]; 
+ float[] prevRaw = new float[TOTAL_CHARTS]; 
+ 
  float[] y1Ranges = new float[TOTAL_CHARTS];
  float[] y2Ranges = new float[TOTAL_CHARTS];
  
@@ -45,12 +48,17 @@
    //data all axis
    for (int i = 0; i < TOTAL_CHARTS; i++) {
      float x = PADDING; 
-     float y1 = PADDING + i*chartHeight; 
+     float y1 = 1.5*PADDING + i*chartHeight; 
      float y2 = y1 + chartHeight - PADDING;
+     
+     prevX[i] = x;
+     prevY[i] = y2;
     
      y1Ranges[i] = y1; 
      y2Ranges[i] = y2;  
-     drawYAxis (x, y1, y2, sensorNames[i]);
+     drawYAxis (x, y1, y2, i, sensorNames[i]);
+     
+     prevRaw[i] = 0; 
    }
  }
  
@@ -68,22 +76,34 @@
      // convert to an int and map to the screen height:
      int index = int(list[1]);
      float inByte = float(list[2]);
-    
-     inByte = getNormalizedValue(index, inByte);
+     float rawValue = inByte;
+     if (list[0].equals("D"))
+       inByte = getDigitalNormalizedValue(index, inByte);
+     else 
+       inByte = getAnalogNormalizedValue(index, inByte);
+     
      //inByte = map(inByte, PADDING, 1023, 0, height/2 - PADDING);
  
      // draw the line:
      stroke(STROKE_COLOR);
      strokeWeight(2);
-     line(prevX, prevY, xPos, height/2 - inByte);
-     prevX = xPos; 
-     prevY = height/2 - inByte; 
+     line(prevX[index], prevY[index], xPos, inByte);
+     prevX[index] = xPos; 
+     prevY[index] = inByte; 
+     
+     if (abs(rawValue - prevRaw[index]) > 200) {
+       PFont font = loadFont("Garamond-32.vlw");
+       textFont(font, 11);
+       text(int(rawValue), xPos, inByte - 5);
+     }
+     
+     prevRaw[index] = rawValue;
+     
      
      // at the edge of the screen, go back to the beginning:
      if (xPos >= width - PADDING) {
        xPos = PADDING;
-       prevX = PADDING; 
-       background(BACKGROUND_COLOR); 
+        background(BACKGROUND_COLOR); 
        drawRect (PADDING_SMALL, width - PADDING_SMALL, PADDING_SMALL, height - PADDING_SMALL);
        drawXAxis (PADDING, width - PADDING, height - PADDING);
        chartHeight = (height - 2 * PADDING) / TOTAL_CHARTS;
@@ -91,14 +111,17 @@
        
        //data all axis
        for (int i = 0; i < TOTAL_CHARTS; i++) {
+         prevX[i] = PADDING; 
+              
          float x = PADDING; 
-         float y1 = PADDING + i*chartHeight; 
-         float y2 = y1 + chartHeight; 
-         drawYAxis (x, y1, y2, sensorNames[i]);  
+         float y1 = 1.5*PADDING + i*chartHeight; 
+         float y2 = y1 + chartHeight - PADDING;
+     
+         drawYAxis (x, y1, y2, i, sensorNames[i]);  
        }
      } else {
        
-       xPos = xPos + PADDING_SMALL;
+       xPos = xPos + 2;
      }
    }
  }
@@ -130,7 +153,7 @@
   }
 
 
-  void drawYAxis (float x, float y1, float y2, String name) {
+  void drawYAxis (float x, float y1, float y2, int i, String name) {
      
     strokeWeight (1);
     stroke (STROKE_COLOR);
@@ -141,16 +164,29 @@
     PFont font = loadFont("Garamond-32.vlw");
     textFont(font, 15);
     
-    
-    text (0, x - PADDING_SMALL, y1);
-    text (1023, x - PADDING_SMALL, y2);
-    text (name, x + PADDING_SMALL, y1 + 3*PADDING_SMALL);
+    if (i < 3 )
+      text (sensorRanges[i], x - 6 * PADDING_SMALL, y1 + PADDING_SMALL);
+    else 
+      text (sensorRanges[i], x - 2 * PADDING_SMALL, y1 + PADDING_SMALL);
+      
+    text (0, x - 2*PADDING_SMALL, y2);
+    text (name, x + PADDING, y1 - PADDING_SMALL);
     
   }
   
-  float getNormalizedValue (int index, float inByte) {
+  float getAnalogNormalizedValue (int index, float inByte) {
     float y1 = y1Ranges[index];
     float y2 = y2Ranges[index];
     
-    return map(inByte, 0, 1023, y1, y2);  
+    return map(1023-inByte, 0, 1023, y1, y2);  
+  }
+  
+  float getDigitalNormalizedValue (int index, float inByte) {
+    float y1 = y1Ranges[index];
+    float y2 = y2Ranges[index];
+    
+    if (inByte == 0)
+      return y1;
+    
+    return y2;  
   }
