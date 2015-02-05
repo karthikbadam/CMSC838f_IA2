@@ -16,13 +16,16 @@ Apart from visualizing the data, there is an added logic to pop the sensor value
 The abstract visualization of the sensor values is rather crazy. I decided to use the [iconic Matrix visual effect](http://matrix.wikia.com/wiki/Matrix_code) to somehow show the change in sensor values. The original Matrix effect shows the activity in the virtual environment using a falling green code. In Matrix 1, Cypher (a character) says that the programming of the Matrix is so complex that it's impossible to view it normally. I decided to use random characters and play with the column colors based on the sensor values. 
 
 The outcome of a brief thought about the visual variables led to this visual encoding. The algorithms behind this visualization is:
+
 1. Predefine number of sensors and colors for each sensor (stick to shades close to green to maintain loyalty to the Matrix).
+
 2. Based on the sensor value pick number of columns on the screen that are to be active (i.e., have a trailing character). 
+
 3. For each active column, create a random character and pop it onto the screen. 
 
 The rest is Processing magic! The fading animation is made possible by drawing a transparent rectangle on screen for every frame. 
 
-**Reading the visualization is quite simple. When a sensor value increases, the number of active columns assigned to the sensor increase. This shows more characters of the sensor color on the screen. For Digital values (0 or 1), I pick random columns on the screen and pop a white ghost. The location of this white ghost is based on the sensor. **
+**Reading the visualization is quite simple. When a sensor value increases, the number of active columns assigned to the sensor increase. This shows more characters of the sensor color on the screen. For Digital values (0 or 1), I pick random columns on the screen and pop a white ghost. The location of this white ghost is based on the sensor.**
 
 
 ## Communication Protocol between Arduino and Processing
