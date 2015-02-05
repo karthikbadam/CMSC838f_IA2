@@ -4,7 +4,7 @@
 
 <img style="float: left; width: 500px;" src="https://raw.githubusercontent.com/karthikbadam/CMSC838f_IA2/master/Sensor%20Visualization.png">
 
-The sensor visualization is inspired by the famous *[Napoleon's March]*(http://lindsayrgwatt.com/blog/wp-content/uploads/2008/09/minard.jpg) by Charles Minard and in general, Edward Tufte's style of [small multiples](http://en.wikipedia.org/wiki/Small_multiple). This is quite a good technique to visualize multiple variables that are dependent on one (in this case, its time). Tufte promotes a minimalist design without using too much color. 
+The sensor visualization is inspired by the famous [Napoleon's March](http://lindsayrgwatt.com/blog/wp-content/uploads/2008/09/minard.jpg) by Charles Minard and in general, Edward Tufte's style of [small multiples](http://en.wikipedia.org/wiki/Small_multiple). This is quite a good technique to visualize multiple variables that are dependent on one (in this case, its time). Tufte promotes a minimalist design without using too much color. 
 
 The purpose of this small multiples based visualization is to differentiate between sensors while making it easy to compare by aligning them on the same axis. This lets us visualize the sensor values without any twisted/braided lines in the line chart.
 
