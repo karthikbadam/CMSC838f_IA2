@@ -27,7 +27,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  //read analog value
+  // read analog value
   potentVal = analogRead(POTENTIOMETER_PIN); 
   
   ledVal = map(potentVal, 0, 1023, 0, 255); 
@@ -35,23 +35,13 @@ void loop() {
   photoVal = analogRead(PHOTORESISTOR_PIN); 
   
   soundVal = analogRead(MICROSENSOR_PIN); 
-    
-  //analogWrite(LED_PIN, HIGH); 
-  
+   
+   //read digital value 
   switchState1 = digitalRead(SWITCH_PIN1); 
   
   switchState2 = digitalRead(SWITCH_PIN2); 
   
-  //Serial.println("A,0," + String(potentVal)); 
-  
-  //Serial.println("A,1," + String(photoVal)); 
-  
-  //Serial.println("A,2," + String(soundVal)); 
-  
-  //Serial.println("D,3," + String(switchState1)); 
-  
-  //Serial.println("D,4," + 0); 
-  
+  //write to log
   Serial.println("A,0," + String(potentVal) + ",A,1," + String(photoVal) + ",A,2," + String(soundVal) + ",D,3," + String(switchState1) + ",D,4," + 1); 
   
   delay(blinkDelayMs);
