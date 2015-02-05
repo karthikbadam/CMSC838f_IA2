@@ -3,26 +3,38 @@
  
  import processing.serial.*;
  
- Serial myPort;        // The serial port
+ Serial myPort;        
+ 
+ //BACKGROUND AND STROKE COLOR -- TUFTE STYLE
  int STROKE_COLOR = #57385c; 
  int BACKGROUND_COLOR = #ffedbc;
- float minValue = 1023; 
+ 
+ //Standard definitions for padding 
  int PADDING = 40; 
  int PADDING_SMALL = 5; 
- float xPos = PADDING;         // horizontal position of the graph
  
- //number of charts
+ //Starting x-coordinate
+ float xPos = PADDING;        
+ 
+ //Number of charts
  int TOTAL_CHARTS = 5;
  int chartWidth = 1000; 
  int chartHeight = 50; 
- 
+
+ //Names of the Sensors -- predefining the channel for each sensor
  String[] sensorNames = {"Potentiometer", "Photoresistor", "Microphone", "Tactile Button", "Switch"}; 
+ 
+ //Maximum values taken by the sensors -- Varies with sensor type
  int[] sensorRanges = {1023, 200, 50, 1, 1};
  
+ //Previous x, y for each sensor visualization
  float[] prevX = new float[TOTAL_CHARTS]; 
  float[] prevY = new float[TOTAL_CHARTS]; 
+ 
+ //Previous raw value -- Dont want to use map again
  float[] prevRaw = new float[TOTAL_CHARTS]; 
  
+ //The y1, y2 ranges of each sensor chart in the layout
  float[] y1Ranges = new float[TOTAL_CHARTS];
  float[] y2Ranges = new float[TOTAL_CHARTS];
  
@@ -46,8 +58,9 @@
    chartHeight = (height - 2 * PADDING) / TOTAL_CHARTS;
    chartWidth = width - 2*PADDING;
    
-   //data all axis
+   // Initializing the x, y ranges for each chart
    for (int i = 0; i < TOTAL_CHARTS; i++) {
+     
      float x = PADDING; 
      float y1 = 1.5*PADDING + i*chartHeight; 
      float y2 = y1 + chartHeight - PADDING;
@@ -57,6 +70,7 @@
     
      y1Ranges[i] = y1; 
      y2Ranges[i] = y2;  
+     
      drawYAxis (x, y1, y2, i, sensorNames[i]);
      
      prevRaw[i] = 0; 
@@ -67,22 +81,53 @@
    // everything happens in the serialEvent()
  }
  
+ // For every line written by Arduino of the form triplets -- "type, channel, value..."
+ void serialEvent (Serial myPort) {
+   
+   String inString = myPort.readStringUntil('\n');
+    
+   if (inString != null) {
+     inString = trim(inString);
+     
+     String[] list = split(inString, ',');
+     
+     // Each line read from the Arduino is like "type1, channel1, value1, type2, channel2, value2,..."
+     // type defines whether its Analog or Digital -- "A" or "D"
+     // channel defines the sensor kind
+     // value is the value read
+     int counter = 0; 
+     for (int i = 0; i < TOTAL_CHARTS; i++) {
+         String type = list[counter];
+         int index = int(list[counter+1]);
+         float inByte = float(list[counter+2]); 
+         counter = counter + 3; 
+         
+         //calling myLoop to draw each sensor value
+         myLoop(type, index, inByte);
+     }
+   }
+ }
+ 
+ //Takes the sensor type, name, and value as input and plots!
  void myLoop(String type, int index, float inByte) {
      
    float rawValue = inByte;
+   
+   // Getting normalized value according to the dimensions of each chart
    if (type.equals("D"))
      inByte = getDigitalNormalizedValue(index, inByte);
    else 
      inByte = getAnalogNormalizedValue(index, inByte);
    
-   // draw the line:
+   // Drawing the line
    stroke(STROKE_COLOR);
    strokeWeight(2);
    line(prevX[index], prevY[index], xPos, inByte);
    prevX[index] = xPos; 
    prevY[index] = inByte; 
    
-   if (sensorRanges[index] != 1 && abs(rawValue - prevRaw[index]) > sensorRanges[index]/5) {
+   // A conditional statement to show the sensor value if there are drastic changes happening
+   if (sensorRanges[index] != 1 && abs(rawValue - prevRaw[index]) > sensorRanges[index]/3) {
      PFont font = loadFont("Garamond-32.vlw");
      textFont(font, 11);
      text(int(rawValue), xPos, inByte - 5);
@@ -90,17 +135,17 @@
    
    prevRaw[index] = rawValue;
    
-   
-   // at the edge of the screen, go back to the beginning:
+   // At the edge of the screen, go back to the beginning:
    if (xPos >= width - PADDING) {
+     
      xPos = PADDING;
-      background(BACKGROUND_COLOR); 
+     background(BACKGROUND_COLOR); 
      drawRect (PADDING_SMALL, width - PADDING_SMALL, PADDING_SMALL, height - PADDING_SMALL);
      drawXAxis (PADDING, width - PADDING, height - PADDING);
      chartHeight = (height - 2 * PADDING) / TOTAL_CHARTS;
      chartWidth = width - 2*PADDING;
      
-     //data all axis
+     // Initializing the x, y ranges for each chart
      for (int i = 0; i < TOTAL_CHARTS; i++) {
        prevX[i] = PADDING; 
             
@@ -110,32 +155,14 @@
    
        drawYAxis (x, y1, y2, i, sensorNames[i]);  
      }
-   } else {
      
+   } else {   
      xPos = xPos + 2;
    }
    
  }
  
- 
- void serialEvent (Serial myPort) {
-   String inString = myPort.readStringUntil('\n');
-    
-   if (inString != null) {
-     inString = trim(inString);
-     String[] list = split(inString, ',');
-     
-     int counter = 0; 
-     for (int i = 0; i < TOTAL_CHARTS; i++) {
-         String type = list[counter];
-         int index = int(list[counter+1]);
-         float inByte = float(list[counter+2]); 
-         counter = counter + 3; 
-         myLoop(type, index, inByte);
-     }
-   }
- }
- 
+ //Draw viewport
   void drawRect (float x1, float x2, float y1, float y2) {
     strokeWeight (1);
     stroke(STROKE_COLOR);
@@ -148,6 +175,7 @@
     text ("Sensor Visualization", 15, 30);
   }
    
+  //Draw X-Axis
   void drawXAxis (float x1, float x2, float y) {
     
     strokeWeight (1);
@@ -162,7 +190,7 @@
     text ("time", x1 + 2*PADDING_SMALL, y + 2*PADDING_SMALL);
   }
 
-
+  //Draw Y-Axis for each chart
   void drawYAxis (float x, float y1, float y2, int i, String name) {
      
     strokeWeight (1);
